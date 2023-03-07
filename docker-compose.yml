@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  auth:
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+      target: development
+    command: npm run start:dev auth
+    env_file:
+      - ./apps/auth/.env
+    depends_on:
+      - auth-db
+      - rabbitmq
+    volumes:
+      - .:/usr/src/app
+
+  gateway:
+    build:
+      context: .
+      dockerfile: ./apps/gateway/Dockerfile
+      target: development
+    command: npm run start:dev gateway
+    env_file:
+      - ./apps/gateway/.env
+    depends_on:
+      - rabbitmq
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - '3000:3000'
+
+  auth-db:
+    image: 'bitnami/postgresql:latest'
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRESQL_USERNAME=root
+      - POSTGRESQL_PASSWORD=password123
+      - POSTGRESQL_DATABASE=auth-db
+    volumes:
+      - 'postgresql_master_data:/bitnami/postgresql'
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+
+volumes:
+  postgresql_master_data:
+    driver: local
